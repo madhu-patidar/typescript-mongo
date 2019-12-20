@@ -1,58 +1,83 @@
 import { Request, Response } from "express";
 import Book from "../entity/book";
 
-export let allBooks = (req: Request, res: Response) => {
-	let books = Book.find((err: any, books: any) => {
+export let allBooks = async (req: Request, res: Response) => {
+	
+	let skip = +req.query.page;
+	skip = skip*10
+	let limit =  +req.query.size
+	let totalcount :any
+	let result: any;
+	await Book.find().countDocuments({},  function( err, count){
+		totalcount = count	
+	})
+	await Book.find ((err: any, books: any) => {
 		if (err) {
-		res.send("Error!");
+			res.send("Error!");
 		} else {
-		res.send(books);
+			result = books;
+		}
+	}).skip(skip).limit(limit);
+	res.send({books: result, count:totalcount});
+};
+
+
+export let getBook = (req: Request, res: Response) => {
+	let book = Book.findById(req.params.id, (err: any, book: any) => {
+		if (err) {
+			res.send(err);
+		} else {
+			res.send(book);
 		}
 	});
 };
-    
 
-	export let getBook = (req: Request, res: Response) => {
-		let book = Book.findById(req.params.id, (err: any, book: any) => {
-			if (err) {
+export let deleteBook = (req: Request, res: Response) => {
+	let book = Book.deleteOne({ _id: req.params.id }, (err: any) => {
+		if (err) {
 			res.send(err);
+		} else {
+			res.send({success: true, status:200, message:"Succesfully Deleted Book"});
+		}
+	});
+};
+
+export let updateBook = (req: Request, res: Response) => {
+	let book = Book.findByIdAndUpdate(
+		req.params.id,
+		req.body,
+		(err: any, book: any) => {
+			if (err) {
+				res.send(err);
 			} else {
-			res.send(book);
+				res.send("Succesfully updated book!");
 			}
 		});
-	};
+};
 
-	export let deleteBook = (req: Request, res: Response) => {
-		let book = Book.deleteOne({ _id: req.params.id }, (err: any) => {
-			if (err) {
-			res.send(err);
-			} else {
-			res.send("Succesfully Deleted Book");
-			}
-		});
-	};
-
-  export let updateBook = (req: Request, res: Response) => {
-    let book = Book.findByIdAndUpdate(
-			req.params.id,
+export let addBook = (req: Request, res: Response) => {
+	console.log("req.body", req.body)
+	let book:any;
+	if (req.body._id) {
+		book = Book.findByIdAndUpdate(
+			req.body._id,
 			req.body,
 			(err: any, book: any) => {
-			if (err) {
-					res.send(err);
-			} else {
-					res.send("Succesfully updated book!");
-			}
-    });
-  };
-
-  export let addBook = (req: Request, res: Response) => {
-	  console.log("req.body", req.body)
-    var book = new Book(req.body);
-			book.save((err: any) => {
 				if (err) {
-				res.send(err);
+					res.send(err);
 				} else {
+					res.send(req.body);
+				}
+			});
+	} else {
+		book = new Book(req.body);
+		book.save((err: any) => {
+			if (err) {
+				res.send(err);
+			} else {
 				res.send(book);
 			}
 		});
-  };
+	}
+
+};

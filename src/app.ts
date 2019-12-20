@@ -1,18 +1,59 @@
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as bookController from "./controllers/bookController";
+import * as photoController from "./controllers/photoController";
+import * as mongoose from "mongoose";
+import * as  multer from 'multer';
+import * as path from 'path'
+import { createDecipher } from "crypto";
 
 // Our Express APP config
 const app = express();
+const cors = require('cors')
+app.use(cors())
+// const upload = multer({dest : "uploads/"})
 app.use(bodyParser.json());
 app.set("port", process.env.PORT || 4000);
 
+const uri: string = "mongodb://127.0.0.1:27017/express-mvp-db";
+
+mongoose.connect(uri, { useNewUrlParser: true }, (err: any) => {
+  if (err) {
+    console.log(err.message);
+  } else {
+    console.log("Succesfully Connected!");
+  }
+});
+
+const allowedExtentions = ['.png','.jpeg'];
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'public/upload'),
+  filename: (req, file, cb)=> cb(null, `${Date.now}${file.originalname}`)
+});
+
+const upload = multer({
+  storage,
+  limits :{
+    fieldSize: 100
+  },
+  fileFilter: (req, file, cb) =>{
+    console.log('file',file)
+    cb(null, allowedExtentions.includes(path.extname(file.originalname)))
+  }
+
+})
 // API Endpoints
 app.get("/books", bookController.allBooks);
-app.get("/book/:id", bookController.getBook);
-app.post("/book", bookController.addBook);
-app.put("/book/:id", bookController.updateBook);
-app.delete("/book/:id", bookController.deleteBook);
+app.get("/books/:id", bookController.getBook);
+app.post("/books", bookController.addBook);
+app.put("/books/:id", bookController.updateBook);
+app.delete("/books/:id", bookController.deleteBook);
+
+app.get("/photos", photoController.allPhotos);
+app.get("/photo/:id", photoController.getPhoto);
+app.post("/photo", upload.array('files'), photoController.addPhoto);
+app.put("/photo/:id", photoController.updatePhoto);
+app.delete("/photo/:id", photoController.deletePhoto);
 
 app.get("/",(req,res)=>{
     res.send("hello")
