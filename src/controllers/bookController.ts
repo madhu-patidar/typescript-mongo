@@ -7,18 +7,22 @@ export let allBooks = async (req: Request, res: Response) => {
 	skip = skip*10
 	let limit =  +req.query.size
 	let totalcount :any
-	let result: any;
 	await Book.find().countDocuments({},  function( err, count){
-		totalcount = count	
+		if (err) {
+			res.send("Error!");
+		} else {
+			totalcount = count	
+		}
+	
 	})
 	await Book.find ((err: any, books: any) => {
 		if (err) {
 			res.send("Error!");
 		} else {
-			result = books;
+			res.send({books: books, count:totalcount});
 		}
-	}).skip(skip).limit(limit);
-	res.send({books: result, count:totalcount});
+	}).skip(skip).limit(limit).sort({ _id: -1 });
+	
 };
 
 

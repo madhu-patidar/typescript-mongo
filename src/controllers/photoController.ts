@@ -47,7 +47,7 @@ export let allPhotos = (req: Request, res: Response) => {
 
   export let addPhoto = (req: Request, res: Response) => {
 	  console.log("req.body", req.files)
-	  console.log("req.body", req.file)
+	  console.log("req.body", req)
     var photo = new Photo(req.body);
 			photo.save((err: any) => {
 				if (err) {
